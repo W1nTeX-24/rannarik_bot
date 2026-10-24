@@ -2,7 +2,7 @@ BOT_TOKEN = "8524147573:AAFHz3p8KpsnbocI9pdC_JBiTMJWGQiRGHk"
 DB_NAME = "rp_database.db"
 
 # Telegram usernames супер-админов (без знака @)
-SUPERADMINS = ["egorka80000", "aLllllpg"]
+SUPERADMINS = ["egorka80000"]
 
 # Ссылка на DonationAlerts
 DONATION_ALERTS_URL = "https://www.donationalerts.com/r/egorka80000"
