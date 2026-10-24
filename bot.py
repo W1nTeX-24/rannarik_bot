@@ -339,7 +339,7 @@ async def get_admin_menu():
 def get_rules_text():
     return (
         "╭──────⎝乡⎞──────╮\n"
-        " 📎 РП ПРАВИЛА ОКРУГА МЭДИСОН\n"
+        " 📎 РП ПРАВИЛА RANNARIK RP\n"
         "╰━─━─━─≪✦≫─━─━─━╯\n\n"
         "╰☆╮ 1. Запрещено иметь белую (и другие не человеческие цвета) кожу, хеадлесс, корблокс, волосы как у ёжика.\n"
         "──────────────────\n"
@@ -438,7 +438,7 @@ async def cmd_start(message: Message, state: FSMContext):
         await message.answer(welcome, reply_markup=menu, parse_mode="Markdown")
     else:
         text = (
-            "🇪🇪 **Добро пожаловать в Округ Мэдисон (Car RP Estonia)!**\n\n"
+            "🇪🇪 **Добро пожаловать в Rannarik RP (Car RP Estonia)!**\n\n"
             "Для участия на сервере необходимо подать заявку на РП Паспорт гражданина.\n"
             "Введите ваш точный игровой **Roblox никнейм**:"
         )
@@ -447,12 +447,18 @@ async def cmd_start(message: Message, state: FSMContext):
 
 @dp.message(RegState.roblox)
 async def reg_roblox(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer("Пожалуйста, отправьте ваш Roblox никнейм текстом:")
+        return
     await state.update_data(roblox=message.text.strip())
     await message.answer("Отлично! Введите **РП Имя и Фамилию** вашего персонажа (Пример: Мартин Каллас):")
     await state.set_state(RegState.rp_name)
 
 @dp.message(RegState.rp_name)
 async def reg_rp_name(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer("Пожалуйста, введите РП Имя и Фамилию текстом:")
+        return
     await state.update_data(rp_name=message.text.strip())
     await message.answer(
         "Укажите **полную дату рождения** персонажа в формате `ДД.ММ.ГГГГ`:\n"
@@ -463,6 +469,9 @@ async def reg_rp_name(message: Message, state: FSMContext):
 
 @dp.message(RegState.birth_date)
 async def reg_bdate(message: Message, state: FSMContext):
+    if not message.text:
+        await message.answer("Пожалуйста, отправьте дату текстом в формате `ДД.ММ.ГГГГ`:")
+        return
     text_in = message.text.strip()
     try:
         bdate = datetime.datetime.strptime(text_in, "%d.%m.%Y").date()
@@ -1372,7 +1381,7 @@ async def show_estate(call: CallbackQuery):
     buttons.append([InlineKeyboardButton(text="◀️ Назад в меню", callback_data="menu:home")])
 
     text = (
-        "🏡 **РИЕЛТОРСКОЕ АГЕНТСТВО ОКРУГА МЭДИСОН**\n\n"
+        "🏡 **РИЕЛТОРСКОЕ АГЕНТСТВО RANNARIK RP**\n\n"
         "Вся недвижимость находится непосредственно в черте города:\n"
         "• **Квартиры в городе** — доступное жилье\n"
         "• **Обычные дома** — комфорт и собственный гараж\n"
@@ -1432,7 +1441,7 @@ async def show_darkshop(call: CallbackQuery):
         buttons.append([InlineKeyboardButton(text=f"{v['name']} — {v['price']} €", callback_data=f"buydark:{k}")])
     buttons.append([InlineKeyboardButton(text="◀️ Назад в меню", callback_data="menu:home")])
     text = (
-        "🕵️ **DARKNET КАТАЛОГ ОКРУГА МЭДИСОН**\n\n"
+        "🕵️ **DARKNET КАТАЛОГ RANNARIK RP**\n\n"
         "☠️ *Внимание: полиция конфискует эти предметы при обыске!*\n"
         "• **Кокаин (Кокс)** даёт разовый буст: **+35% к выплате за следующую сессию**!\n\n"
         "Выберите нелегальный товар:"
@@ -1836,7 +1845,7 @@ async def cmd_session(message: Message):
         [InlineKeyboardButton(text="🚗 Зайти на РП сессию", callback_data="session:join")]
     ])
     text = (
-        "🚨 **ВНИМАНИЕ! ОБЪЯВЛЕН СТАРТ РП СЕССИИ В ОКРУГЕ МЭДИСОН!** 🚨\n\n"
+        "🚨 **ВНИМАНИЕ! ОБЪЯВЛЕН СТАРТ РП СЕССИИ В RANNARIK RP!** 🚨\n\n"
         "📍 Сервер: **Car Crash Simulator (Эстония)**\n"
         "💶 Все присутствующие получат выплаты зарплат и прибыль с бизнеса в банк Swedbank!\n"
         "📑 Также будут списаны налоги на авто и жилье.\n\n"
@@ -2260,12 +2269,32 @@ async def cmd_removemoney(message: Message):
 @dp.callback_query(F.data == "menu:home")
 async def back_home(call: CallbackQuery):
     menu = await get_main_menu(call.from_user.id, call.from_user.username)
-    await call.message.edit_text("Главное меню округа Мэдисон:", reply_markup=menu)
+    await call.message.edit_text("Главное меню Rannarik:", reply_markup=menu)
 
 # --- ТОЧКА ВХОДА ---
+async def start_health_server():
+    from aiohttp import web
+    async def handle_ping(request):
+        return web.Response(text="Bot is running!")
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    app.router.add_get("/healthz", handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"🌐 Health-check веб-сервер запущен на порту {port}")
+
 async def main():
     await init_db()
-    print("🚀 Car RP Bot v10 (Passport Queue & Alerts) успешно запущен!")
+    # Запускаем фоновый порт для Render Web Service (чтобы статус был Live)
+    if "PORT" in os.environ:
+        try:
+            await start_health_server()
+        except Exception as e:
+            print("Health server error:", e)
+    print("🚀 Car RP Bot Rannarik успешно запущен!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
